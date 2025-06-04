@@ -1,0 +1,112 @@
+/* Style for table */
+table {
+    width: 100%;
+    border-collapse: collapse; /* Ensure borders are collapsed together */
+  }
+  
+  table, th, td {
+    border: 1px solid rgb(0, 0, 0); /* Adding border to table, table headers, and table data */
+  }
+  
+  th, td {
+    padding: 8px; /* Add padding to make the content inside cells more readable */
+    text-align: left; /* Align text to the left inside cells */
+  }
+  
+  th {
+    background-color: #141E61; /* Light background for the table header */
+  }
+  
+
+
+/* Modal Styles */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5);
+  z-index: 999;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 25px 30px;
+  border-radius: 10px;
+  width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.modal-content h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.modal-content input[type="text"] {
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 8px;
+  font-size: 14px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+.modal-content label {
+  font-size: 14px;
+  display: block;
+  margin: 5px 0;
+}
+
+.modal-content button {
+  padding: 8px 14px;
+  margin-top: 15px;
+  margin-right: 10px;
+  background: #3f51b5;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.modal-content button:hover {
+  background: #2c3fa3;
+}
+
+
+
+  .lab-type.hide {
+    display: none;
+  }
+  .lab-type.show {
+    display: inline;
+  }
+
+  body {
+    background-color: WHITE;
+  }
+
+/* Ensure body takes full height */
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; /* Full viewport height */
+}
+
+/* Make the content push the footer down */
+.container {
+  flex: 1;
+}
+
+/* Footer should appear at the bottom with spacing */
+footer {
+  position: relative;
+  bottom: 0;
+  width: 100%;
+  margin-top: 50px; /* Space before footer appears */
+}

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Timetable Generator</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background-color: #EEEEEE;
+      overflow-x: hidden;
+    }
+    .lab-cell {
+      background-color: #CBDCEB;
+      text-align: center;
+    }
+    .table-responsive {
+      overflow-x: auto;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header goes here -->
+  <header class="bg-[#0F044C] shadow-md py-6 px-8 mb-6 w-full">
+  <div class="flex justify-between items-center w-full">
+    <!-- Left logo -->
+    <img src="/images/Logo.png" alt="Logo" class="h-12 filter brightness-0 invert" />
+
+    <!-- Title -->
+    <h1 class="text-3xl font-bold text-[#EEEEEE] tracking-wide font-[Cookie] text-center flex-1">
+      Academic Timetable Viewer
+    </h1>
+
+    <!-- Right logo -->
+    <img src="/images/svsu_logo.png" alt="University Logo" class="h-12" />
+  </div>
+</header>
+</body>
+</html>
+  </a>
+  <a href="/auth/logout" class="btn btn-outline-danger right-5 absolute text-1xl bg-[#141E61] text-white px-6 py-2 rounded-md hover:bg-[#787A91] transition duration-300" style="margin-top: 110px;">
+    Logout
+  </a>
+
+<body>
+  <div class="container mt-4" style="padding: 0 40px;">
+
+    <form method="GET" action="/user/timetable" class="mb-6">
+  <div class="flex items-end space-x-4">
+    <div style="margin-left: 40px;">
+      <label for="course" class="block text-sm font-medium text-gray-700 mb-1">🎓 Select Course</label>
+      <select name="course" id="course" class="block w-64 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2">
+        <option value="">-- All Courses --</option>
+        <% courses.forEach(course => { %>
+          <option value="<%= course %>" <%= selectedCourse === course ? 'selected' : '' %>><%= course %></option>
+        <% }) %>
+      </select>
+    </div>
+
+    <div class="pt-5">
+      <button type="submit" class="bg-[#141E61] hover:bg-[#787A91] text-[#EEEEEE] px-5 py-2 rounded-md">
+        Find
+      </button>
+    </div>
+  </div>
+</form>
+
+
+    <% if (!timetable || Object.keys(timetable).length === 0) { %>
+      <h4 style="margin-left: 340px;">No timetable available.</h4>
+    <% } else { %>
+
+      <% for (let courseName in timetable) { %>
+        <div class="mt-5">
+          <h4 style="margin-left: 40px; font-size: 1.5rem; font-weight: 600;"><%= courseName %></h4>
+
+          <div class="table-responsive"style="margin-left: 40px;">
+            <table border="1" cellpadding="3" cellspacing="0" style="width: 100%; margin: 0 auto 60px auto; font-size: 1em; text-align:center;">
+              <thead style="color: white;">
+                <tr>
+                  <th colspan="<%= slots.length + 1 %>" style="text-align: center; font-size: 1.5em;"> <%= university %> </th>
+                </tr>
+                <tr>
+                  <th colspan="3" style="text-align: center;"><%= courseName %></th>
+                  <th colspan="<%= slots.length - 5 %>" style="text-align: center;"><%= faculty %></th>
+                    <%
+                      const wef = new Date(wefDate);
+                      const day = String(wef.getDate()).padStart(2, '0');
+                      const month = String(wef.getMonth() + 1).padStart(2, '0');
+                      const year = wef.getFullYear();
+                      const formattedDate = `${day}-${month}-${year}`;
+                    %>
+                  <th colspan="3" style="text-align: center;">w.e.f : <%= formattedDate %></th>
+                </tr>
+                <tr>
+                  <th>Day / Time</th>
+                  <% for (let slot of slots) { %>
+                    <th><%= slot %></th>
+                  <% } %>
+                </tr>
+              </thead>
+              <tbody>
+                <% for (let day of days) { %>
+                  <tr>
+                    <th style="background-color: #f8f9fa;"><%= day %></th>
+                    <% for (let i = 0; i < slots.length; ) { %>
+                      <% const entry = timetable[courseName]?.[day]?.[i]; %>
+
+                      <% if (!entry) { %>
+                        <td></td>
+                        <% i++; continue; %>
+                      <% } %>
+
+                      <% if (entry.subject && entry.subject.toLowerCase().includes('lab')) {
+                        let colspan = 1;
+                        while (
+                          i + colspan < slots.length &&
+                          timetable[courseName]?.[day]?.[i + colspan] &&
+                          timetable[courseName][day][i + colspan].subject === entry.subject
+                        ) {
+                          colspan++;
+                        }
+                      %>
+                        <td colspan="<%= colspan %>" class="lab-cell">
+                          <strong><%= entry.room %></strong><br>
+                          <%= entry.subject %><br>
+                          <%= entry.teacher %>
+                        </td>
+                        <% i += colspan; %>
+                      <% } else { %>
+                        <td>
+                          <strong><%= entry.room %></strong><br>
+                          <%= entry.subject %><br>
+                          <%= entry.teacher %>
+                        </td>
+                        <% i++; %>
+                      <% } %>
+                    <% } %>
+                  </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+
+          <% if (subjectTeachers && subjectTeachers[courseName]) { %>
+            <div class="mt-4 table-responsive" style="margin-left: 40px;">
+              <table border="1" cellpadding="0" cellspacing="3" style="width: auto; margin: 0 auto 60px auto; font-size: 1em; text-align:center;">
+                <thead style="color: white;">
+                  <tr>
+                    <th colspan="4" style="text-align: center;">Subject and Teacher Mapping for <%= courseName %></th>
+                  </tr>
+                  <tr>
+                    <th style="white-space: nowrap; text-align: center;">Subject Short</th>
+                    <th style="white-space: nowrap; text-align: center;">Subject Full</th>
+                    <th style="white-space: nowrap; text-align: center;">Teacher Short</th>
+                    <th style="white-space: nowrap; text-align: center;">Teacher Full</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% subjectTeachers[courseName].forEach(st => { %>
+                    <tr>
+                      <td style="white-space: nowrap;"><%= st.subjectShort %></td>
+                      <td style="white-space: nowrap;"><%= st.subjectLong %></td>
+                      <td style="white-space: nowrap;"><%= st.teacherShort %></td>
+                      <td style="white-space: nowrap;"><%= st.teacherLong %></td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+          <% } %>
+        </div>
+      <% } %>
+    <% } %>
+  </div>
+
+  <footer style="background-color: #0F044C; padding: 15px; text-align: center; color: white; margin-top: 50px;">
+    <p>© 2025 TimeTable System</p>
+  </footer>
+</body>
+</html>

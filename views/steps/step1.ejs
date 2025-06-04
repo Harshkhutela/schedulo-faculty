@@ -1,0 +1,84 @@
+<%- include('../partials/header') %>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Step 1 - Department & Bell Time</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<!-- Navigation Steps -->
+<nav class="bg-[#EEEEEE] shadow-md">
+  <div class="max-w-7xl mx-auto px-4 py-4">
+    <ul class="flex justify-between text-sm md:text-base text-[#0F044C] font-medium">
+      <li class="text-[#0F044C] font-bold px-4">Step 1: Setup</li>
+      <li class="px-4"><a href="/step2" class="hover:text-[#0F044C]">Step 2: Subjects</a></li>
+      <li class="px-4"><a href="/step3" class="hover:text-[#0F044C]">Step 3: Courses</a></li>
+      <li class="px-4"><a href="/step4" class="hover:text-[#0F044C]">Step 4: Classrooms</a></li>
+      <li class="px-4"><a href="/step5" class="hover:text-[#0F044C]">Step 5: Teachers</a></li>
+      <li class="px-4"><a href="/step6" class="hover:text-[#0F044C]">Step 6: Generate</a></li>
+    </ul>
+  </div>
+</nav>
+
+
+  <!-- Page Heading -->
+  <div class="text-center my-10">
+    <h1 class="text-3xl font-bold text-[#0F044C]">Step 1: Department & Bell Time Settings</h1>
+    <p class="text-[#141E61] mt-2">Configure your department and time preferences below</p>
+  </div>
+
+  <!-- Form Card -->
+  <div class="max-w-xl mx-auto bg-[#EEEEEE] shadow-lg rounded-lg p-8">
+    <form action="/step1" method="POST" class="space-y-6">
+
+      <div>
+        <label class="block text-[#0F044C] font-medium mb-1">Department Name</label>
+        <input type="text" name="department" required value="<%= config?.department || '' %>"
+               class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0F044C]">
+      </div>
+
+      <div class="grid grid-cols-2 gap-6">
+        <div>
+          <label class="block text-[#0F044C] font-medium mb-1">Lecture Duration (min)</label>
+          <input type="number" name="lectureDuration" required value="<%= config?.lectureDuration || '' %>"
+                 class="w-full border border-gray-300 rounded-md px-4 py-2 focus:ring-[#0F044C] focus:ring-2">
+        </div>
+        <div>
+          <label class="block text-[#0F044C] font-medium mb-1">Lab Duration (min)</label>
+          <input type="number" name="labDuration" required value="<%= config?.labDuration || '' %>"
+                 class="w-full border border-gray-300 rounded-md px-4 py-2 focus:ring-[#0F044C] focus:ring-2">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-6">
+        <div>
+          <label class="block text-[#0F044C] font-medium mb-1">Lunch Start Time</label>
+          <input type="time" name="lunchStart" required value="<%= config?.lunchStart || '' %>"
+                 class="w-full border border-gray-300 rounded-md px-4 py-2 focus:ring-[#0F044C] focus:ring-2">
+        </div>
+        <div>
+          <label class="block text-[#0F044C] font-medium mb-1">Lunch End Time</label>
+          <input type="time" name="lunchEnd" required value="<%= config?.lunchEnd || '' %>"
+                 class="w-full border border-gray-300 rounded-md px-4 py-2 focus:ring-[#0F044C] focus:ring-2">
+        </div>
+      </div>
+
+      <div class="text-right">
+        <button type="submit"
+                class="bg-[#141E61] text-white px-6 py-2 rounded-md hover:bg-[#787A91] transition duration-300">
+          Save & Continue ➡
+        </button>
+      </div>
+
+    </form>
+  </div>
+
+
+  <!-- Optional: Script -->
+  <script src="/js/step1.js"></script>
+</body>
+</html>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,271 @@
+<%- include('../partials/header') %> <!-- Ensure header is correctly included -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Step 1 - Department & Bell Time</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<!-- Navigation Steps -->
+<nav class="bg-[#EEEEEE] shadow-md py-4">
+  <div class="max-w-7xl mx-auto px-6">
+    <ul class="flex justify-between text-sm md:text-base text-[#0F044C] font-medium">
+      <li class="font-bold px-4">Step 1: <a href="/step1" class="hover:text-[#0F044C]">Setup</a></li>
+      <li class="text-[#0F044C] font-bold px-4">Step 2: Subjects</li>
+      <li class="px-4"><a href="/step3" class="hover:text-[#0F044C]">Step 3: Courses</a></li>
+      <li class="px-4"><a href="/step4" class="hover:text-[#0F044C]">Step 4: Classrooms</a></li>
+      <li class="px-4"><a href="/step5" class="hover:text-[#0F044C]">Step 5: Teachers</a></li>
+      <li class="px-4"><a href="/step6" class="hover:text-[#0F044C]">Step 6: Generate</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- Page Heading -->
+<div class="flex items-center justify-center my-10 relative">
+  <!-- Back arrow button on the left -->
+   <a href="/step1">
+  <button type="button" class="absolute top-0 left-7 text-1xl bg-[#141E61] text-white px-6 py-2 rounded-md hover:bg-[#787A91] transition duration-300">
+    ← Back
+  </button>
+  </a>
+
+  <!-- Heading and subtext centered -->
+  <div class="text-center">
+    <h1 class="text-3xl font-bold text-[#0F044C]">Step 2: Subject Details</h1>
+    <p class="text-[#141E61] mt-2">Configure your subject preferences below</p>
+  </div>
+</div>
+
+<!-- Form Card -->
+<div class="max-w-xl mx-auto bg-[#EEEEEE] shadow-lg rounded-lg p-8">
+  <form action="/step2/add" method="POST" class="space-y-6">
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+  <div>
+    <label class="block text-[#0F044C] font-medium mb-1">Full Name</label>
+    <input type="text" name="fullName" required placeholder="Full Name"
+           class="w-full border border-gray-400 rounded-md px-4 py-2 focus:ring-[#0F044C] focus:ring-2">
+  </div>
+
+  <div>
+    <label class="block text-[#0F044C] font-medium mb-1">Short Name</label>
+    <input type="text" name="shortName" required placeholder="Short Name"
+           class="w-full border border-gray-400 rounded-md px-4 py-2 focus:ring-[#0F044C] focus:ring-2">
+  </div>
+</div>
+
+
+    <div class="grid grid-cols-2 gap-6">
+      <div>
+        <label class="block text-[#0F044C] font-medium mb-1">Lectures per Week</label>
+        <input type="number" name="count" required placeholder="Lectures per week"
+               class="w-full border border-gray-400 rounded-md px-4 py-2 focus:ring-[#0F044C] focus:ring-2">
+      </div>
+      <div>
+        <label class="block text-[#0F044C] font-medium mb-1">Hours per Lecture</label>
+        <input type="number" name="hoursPerLecture" required placeholder="Hours per Lecture"
+               class="w-full border border-gray-400 rounded-md px-4 py-2 focus:ring-[#0F044C] focus:ring-2">
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-[#0F044C] font-medium mb-1">Is Lab?</label>
+      <input type="checkbox" name="isLab" onchange="toggleLabType(this)"> <span class="ml-2">Enable Lab Grouping</span>
+    </div>
+
+    <div id="labTypeContainer" class="hidden">
+      <label class="block text-[#0F044C] font-medium mb-1">Lab Type (e.g. Computer, Electrical)</label>
+      <input type="text" name="labType" placeholder="Lab Type"
+             class="w-full border border-gray-400 rounded-md px-4 py-2 focus:ring-[#0F044C] focus:ring-2">
+    </div>
+
+    <div class="text-right">
+      <button type="submit"
+              class="bg-[#141E61] text-white px-6 py-2 rounded-md hover:bg-[#787A91] transition duration-300">
+        Add Subject
+    </div>   
+  </form>
+  <form action="/step2/next" method="POST" class="mt-6 text-right">
+    <button type="button"
+      onclick="toggleList(event)" class="bg-[#141E61] text-white px-6 py-2 rounded-md hover:bg-[#787A91] transition duration-300">
+      View Subjects</button>
+    <button type="submit" 
+            class="bg-[#141E61] text-white px-6 py-2 rounded-md hover:bg-[#787A91] transition duration-300">
+      Save & Continue ➡
+    </button>
+  </form>
+</div>
+
+
+<!-- Subject List Table -->
+<div id="subjectListContainer" class="max-w-4xl mx-auto mt-8"><!-- Increased max width for spacing -->
+
+  <div id="subjectList" class="hidden mt-4">
+    <% if (subjects.length > 0) { %>
+    <table class="w-full border-collapse border border-gray-400 rounded-lg shadow-lg">
+<thead class="bg-[#787A91] text-white">
+      <tr>
+      <th class="px-6 py-3 w-32">Short Name</th>
+      <th class="px-6 py-3 w-64">Full Name</th>
+      <th class="px-6 py-3 w-32">Lectures/Week</th>
+      <th class="px-6 py-3 w-32">Hours/Lecture</th>
+      <th class="px-6 py-3 w-24">Is Lab?</th>
+      <th class="px-6 py-3 w-48">Lab Type</th>
+      <th class="px-6 py-3 w-64">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+  <% subjects.forEach(subject => { %>
+    <!-- Display Row -->
+    <tr class="border-b border-gray-300">
+      <td class="px-6 py-3"><%= subject.shortName %></td>
+      <td class="px-6 py-3"><%= subject.fullName %></td>
+      <td class="px-6 py-3"><%= subject.count %></td>
+      <td class="px-6 py-3"><%= subject.hoursPerLecture %></td>
+      <td class="px-6 py-3"><%= subject.isLab ? 'Yes' : 'No' %></td>
+      <td class="px-6 py-3"><%= subject.labType || '-' %></td>
+      <td class="px-6 py-3 flex justify-center space-x-4">
+        <button type="button"
+  onclick="openEditSubjectModal(this)"
+  data-id="<%= subject._id %>"
+  data-shortname="<%= subject.shortName %>"
+  data-fullname="<%= subject.fullName %>"
+  data-count="<%= subject.count %>"
+  data-hours="<%= subject.hoursPerLecture %>"
+  data-islab="<%= subject.isLab %>"
+  data-labtype="<%= subject.labType %>"
+  class="text-[#0F044C] border border-[#0F044C] px-4 py-2 rounded hover:bg-[#0F044C] hover:text-white">
+  Edit
+</button>
+
+        <form action="/step2/delete/<%= subject._id %>" method="POST">
+          <button type="submit"
+            class="bg-white text-red-600 px-4 py-2 rounded-md border border-red-600 hover:bg-red-600 hover:text-white transition">Delete</button>
+        </form>
+      </td>
+    </tr>
+  <% }) %>
+</tbody>
+</table>
+
+    <% } else { %>
+      <p class="text-[#0F044C] mt-2">No subjects found.</p>
+    <% } %>
+  </div>
+</div>
+
+<!-- Edit Subject Modal -->
+<div id="editSubjectModal" class="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center hidden z-50">
+  <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
+    <h3 class="text-xl font-semibold mb-4 text-[#0F044C]">Edit Subject</h3>
+    <form id="editSubjectForm" method="POST" class="space-y-4">
+      <input type="text" name="fullName" id="editFullName" placeholder="Full Name" required
+        class="w-full p-3 border border-gray-300 rounded-md" />
+
+      <input type="text" name="shortName" id="editShortName" placeholder="Short Name" required
+        class="w-full p-3 border border-gray-300 rounded-md" />
+
+      <div>
+      <label class="block font-medium mb-1 text-[#0F044C]">Lectures/week</label>
+      <input type="number" name="count" id="editCount" placeholder="Lectures/week" required
+        class="w-full p-3 border border-gray-300 rounded-md" />
+      </div>
+
+      <div>
+      <label class="block font-medium mb-1 text-[#0F044C]">Hours/lecture</label>
+      <input type="number" name="hoursPerLecture" id="editHoursPerLecture" placeholder="Hours/lecture" required
+        class="w-full p-3 border border-gray-300 rounded-md" />
+      </div>
+
+      <label class="flex items-center">
+        <input type="checkbox" name="isLab" id="editIsLab" onchange="toggleLabInputSubject()" />
+        <span class="ml-2">Is Lab?</span>
+      </label>
+
+      <input type="text" name="labType" id="editLabType" placeholder="Lab Type (if lab)"
+        class="w-full p-3 border border-gray-300 rounded-md hidden" />
+
+      <div class="flex justify-end gap-3 pt-3">
+        <button type="button" onclick="closeEditSubjectModal()"
+          class="bg-white border border-gray-400 px-5 py-2 rounded-md hover:bg-gray-200">Cancel</button>
+        <button type="submit"
+          class="bg-[#141E61] hover:bg-[#787A91] text-white px-5 py-2 rounded-md">Update</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<!-- JavaScript Section --> 
+<script src="/js/step2.js"></script>
+
+<%- include('../partials/footer') %> <!-- Ensure footer is included -->
+<script>
+  function toggleLabType(checkbox) {
+    const labTypeContainer = document.getElementById('labTypeContainer');
+    labTypeContainer.classList.toggle('hidden', !checkbox.checked);
+  }
+
+  function toggleList() {
+  const list = document.getElementById('subjectList');
+  const container = document.getElementById('subjectListContainer');
+  const button = event.currentTarget;  // Get the clicked button element
+
+  list.classList.toggle('hidden');
+
+  if (!list.classList.contains('hidden')) {
+    button.textContent = "Hide Subjects";
+    setTimeout(() => {
+      container.scrollIntoView({ behavior: 'smooth' });
+    }, 200);
+  } else {
+    button.textContent = "View Subjects";
+  }
+}
+
+
+  function openEditSubjectModal(button) {
+    const modal = document.getElementById('editSubjectModal');
+    const form = document.getElementById('editSubjectForm');
+
+    const id = button.getAttribute('data-id');
+    const shortName = button.getAttribute('data-shortname');
+    const fullName = button.getAttribute('data-fullname');
+    const count = button.getAttribute('data-count');
+    const hours = button.getAttribute('data-hours');
+    const isLab = button.getAttribute('data-islab') === "true";
+    const labType = button.getAttribute('data-labtype');
+
+    form.action = `/step2/edit/${id}`;
+    document.getElementById('editShortName').value = shortName;
+    document.getElementById('editFullName').value = fullName;
+    document.getElementById('editCount').value = count;
+    document.getElementById('editHoursPerLecture').value = hours;
+    document.getElementById('editIsLab').checked = isLab;
+
+    const labInput = document.getElementById('editLabType');
+    if (isLab) {
+      labInput.classList.remove('hidden');
+      labInput.value = labType;
+    } else {
+      labInput.classList.add('hidden');
+      labInput.value = '';
+    }
+
+    modal.classList.remove('hidden');
+  }
+
+  function toggleLabInputSubject() {
+    const checkbox = document.getElementById('editIsLab');
+    const labInput = document.getElementById('editLabType');
+    labInput.classList.toggle('hidden', !checkbox.checked);
+    if (!checkbox.checked) labInput.value = '';
+  }
+
+  function closeEditSubjectModal() {
+    document.getElementById('editSubjectModal').classList.add('hidden');
+  }  
+
+</script>

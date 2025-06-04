@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Login | Timetable System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+
+
+  <style>
+    /* Reset and base */
+    * {
+      box-sizing: border-box;
+      margin: 0; padding: 0;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body, html {
+      height: 100%;
+      background: linear-gradient(135deg, #0F044C 0%, #0F044C 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #333;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Timetable grid background */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background:
+        linear-gradient(#787A91 1px, transparent 1px),
+        linear-gradient(90deg, #787A91 1px, transparent 1px);
+      background-size: 60px 60px;
+      opacity: 0.15;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Login container */
+    .login-container {
+    position: relative;
+    background: #EEEEEE;
+    border-radius: 20px;
+    width: 680px;
+    padding: 95px 60px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    z-index: 1;
+    text-align: center;
+    }
+
+  .login-header img {
+    height: 90px;
+    margin-bottom: 10px;
+    margin-top: -20px;
+    filter: drop-shadow(0 0 1px #141E61);
+  }
+
+
+    .login-header h1 {    
+      font-family: 'Times New Roman', Times, serif;
+      font-weight: 700;
+      font-size: 28px;
+      margin-bottom: 8px;
+      color: #141E61;
+    }
+
+    .login-header p {
+      font-weight: 500;
+      font-size: 16px;
+      color: #787A91;
+      margin-bottom: 28px;
+    }
+
+    /* Google login button */
+    .login-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      background-color: #141E61;
+      color: #EEEEEE;
+      padding: 14px 0;
+      border-radius: 14px;
+      font-weight: 600;
+      font-size: 17px;
+      text-decoration: none;
+      box-shadow: 0 5px 15px rgba(20, 30, 97, 0.6);
+      transition: background-color 0.3s ease, box-shadow 0.3s ease;
+      user-select: none;
+      cursor: pointer;
+      border: none;
+    }
+
+    .login-btn:hover {
+      background-color: #0F044C;
+      box-shadow: 0 8px 22px rgba(15, 4, 76, 0.8);
+    }
+
+    .login-btn img {
+      height: 22px;
+      filter: drop-shadow(0 0 2px #EEEEEE);
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 32px;
+      font-size: 15px;
+      color: #787A91;
+      user-select: none;
+    }
+
+    /* Responsive */
+    @media(max-width: 420px) {
+      .login-container {
+        width: 90%;
+        padding: 35px 25px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <main class="login-container" role="main" aria-label="Login to Timetable System">
+    <header class="login-header">
+      <img src="/images/Logo.png" alt="SVSU Logo"/>
+      <h1> Login </h1>
+      <p>Sign in with your official SVSU email assigned by university.
+        (E.g. xyz@svsu.ac.in)</p>
+    </header>
+
+    <a href="/auth/google" class="login-btn" aria-label="Login with Google">
+      <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="" aria-hidden="true" />
+      Login with Google
+    </a>
+
+    <footer class="footer">
+      &copy; <%= new Date().getFullYear() %> SVSU | All rights reserved.
+    </footer>
+  </main>
+
+</body>
+</html>

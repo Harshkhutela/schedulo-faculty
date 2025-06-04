@@ -1,0 +1,306 @@
+<%- include('../partials/header') %>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Step 1 - Department & Bell Time</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<!-- Navigation Steps -->
+<nav class="bg-[#EEEEEE] shadow-md py-4">
+  <div class="max-w-7xl mx-auto px-6">
+    <ul class="flex justify-between text-sm md:text-base text-[#0F044C] font-medium">
+      <li class="font-bold px-4">Step 1: <a href="/step1" class="hover:text-[#0F044C]">Setup</a></li>
+      <li class="font-bold px-4">Step 2: <a href="/step2" class="hover:text-[#0F044C]">Subjects</a></li>
+      <li class="text-[#0F044C] font-bold px-4">Step 3: Courses</li>
+      <li class="px-4"><a href="/step4" class="hover:text-[#0F044C]">Step 4: Classrooms</a></li>
+      <li class="px-4"><a href="/step5" class="hover:text-[#0F044C]">Step 5: Teachers</a></li>
+      <li class="px-4"><a href="/step6" class="hover:text-[#0F044C]">Step 6: Generate</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- Page Heading -->
+<div class="flex items-center justify-center my-10 relative">
+  <!-- Back arrow button on the left -->
+   <a href="/step2">
+  <button type="button" class="absolute top-0 left-7 text-1xl bg-[#141E61] text-white px-6 py-2 rounded-md hover:bg-[#787A91] transition duration-300">
+    ← Back
+  </button>
+  </a>
+
+  <div class="text-center">
+    <h1 class="text-3xl font-bold text-[#0F044C]">Step 3: Course Details</h1>
+    <p class="text-[#141E61] mt-2">Configure your course preferences below</p>
+  </div>
+</div>
+
+<!-- Form Card -->
+<div class="max-w-3xl mx-auto bg-[#EEEEEE] shadow-lg rounded-lg p-8">
+  <form action="/step3/add" method="POST" class="space-y-6">
+
+    <!-- Course Name and Short Name in one row -->
+    <div class="grid grid-cols-2 gap-6">
+      <div>
+        <label class="block text-[#0F044C] font-medium mb-1" for="courseName">Course Name</label>
+        <input
+          type="text"
+          id="courseName"
+          name="courseName"
+          required
+          placeholder="Course Name"
+          class="w-full border border-gray-400 rounded-md px-4 py-2 focus:ring-[#0F044C] focus:ring-2"
+        />
+      </div>
+
+      <div>
+        <label class="block text-[#0F044C] font-medium mb-1" for="courseShortName">Course Short Name</label>
+        <input
+          type="text"
+          id="courseShortName"
+          name="courseShortName"
+          required
+          placeholder="Course Short Name"
+          class="w-full border border-gray-400 rounded-md px-4 py-2 focus:ring-[#0F044C] focus:ring-2"
+        />
+      </div>
+    </div>
+
+    <!-- Student Strength -->
+    <div>
+      <label class="block text-[#0F044C] font-medium mb-1" for="studentStrength">Student Strength</label>
+      <input
+        type="number"
+        id="studentStrength"
+        name="studentStrength"
+        min="0"
+        required
+        placeholder="Student Strength"
+        class="w-full border border-gray-400 rounded-md px-4 py-2 focus:ring-[#0F044C] focus:ring-2"
+      />
+    </div>
+
+    <!-- Subject Search -->
+    <div>
+      <label for="subjectSearch" class="block font-medium text-[#0F044C] mb-1">Search & Select Subjects</label>
+      <input
+        type="text"
+        id="subjectSearch"
+        readonly
+        placeholder="Click to search subjects..."
+        onclick="toggleSubjectList()"
+        class="w-full border border-gray-400 rounded-md px-4 py-2 cursor-pointer bg-white focus:ring-[#0F044C] focus:ring-2"
+      />
+    </div>
+
+    <!-- Subject Options -->
+    <div
+      id="subjectOptions"
+      class="hidden border border-gray-300 rounded p-3 max-h-40 overflow-y-auto bg-white"
+      style="max-width: 100%;"
+    >
+      <% subjects.forEach(subject => { %>
+        <div class="flex items-center mb-1">
+          <input
+            type="checkbox"
+            name="subjects"
+            value="<%= subject._id %>"
+            id="subject-<%= subject._id %>"
+            class="mr-2"
+          />
+          <label for="subject-<%= subject._id %>"><%= subject.fullName %> (<%= subject.shortName %>)</label>
+        </div>
+      <% }) %>
+    </div>
+
+    <!-- Submit Button -->
+    <div class="text-right">
+      <button
+        type="submit"
+        class="bg-[#141E61] text-white px-6 py-2 rounded-md hover:bg-[#787A91] transition duration-300">
+        Add Course
+      </button>
+    </div>
+    <div class="text-right mt-4 space-x-0.5">
+      <button
+        type="button"
+        id="viewCoursesBtn"
+        class="bg-[#141E61] text-white px-6 py-2 rounded-md hover:bg-[#787A91] transition duration-300">
+        View Courses
+      </button>
+      <a href="/step4">
+        <button type="button" class="bg-[#141E61] text-white px-6 py-2 rounded-md hover:bg-[#787A91] transition">Save & Continue ➡</button>
+      </a>
+    </div>
+  </form>
+</div>
+
+<!-- Existing Courses Table -->
+<div id="coursesTableContainer" class="max-w-5xl mx-auto mt-10 hidden">
+  <h3 class="text-2xl font-semibold mb-6 text-[#0F044C]"></h3>
+  <div class="overflow-x-auto">
+    <table class="min-w-full table-auto border-collapse border border-black">
+      <thead class="bg-gray-100">
+        <tr class="text-[#EEEEEE] bg-[#0F044C]">
+          <th class="border border-black px-4 py-2 text-left">Course Name</th>
+          <th class="border border-black px-4 py-2 text-left">Short Name</th>
+          <th class="border border-black px-4 py-2 text-center">Student Strength</th>
+          <th class="border border-black px-4 py-2 text-left">Subjects</th>
+          <th class="border border-black px-4 py-2 text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% courses.forEach(course => { %>
+          <tr class="bg-[#EEEEEE] ">
+            <td class="border border-black px-4 py-2"><%= course.courseName %></td>
+            <td class="border border-black px-4 py-2"><%= course.courseShortName %></td>
+            <td class="border border-black px-4 py-2 text-center"><%= course.studentStrength %></td>
+            <td class="border border-black px-4 py-2 max-w-xs overflow-auto">
+              <% course.subjects.forEach(subject => { %>
+                <div class="text-sm text-gray-700 mb-0.5"><%= subject.fullName %> (<%= subject.shortName %>)</div>
+              <% }) %>
+            </td>
+            <td class="border border-black px-4 py-2 text-center space-y-2">
+              <button
+                type="button"
+                class="bg-white text-[#0F044C] px-4 py-2 rounded-md border border-[#0F044C] hover:bg-[#0F044C] hover:text-white transition"
+                data-id="<%= course._id %>"
+                data-name="<%= course.courseName.replace(/"/g, '&quot;') %>"
+                data-short="<%= course.courseShortName.replace(/"/g, '&quot;') %>"
+                data-strength="<%= course.studentStrength %>"
+                data-subjects='<%- JSON.stringify(course.subjects.map(s => s._id)) %>'
+                onclick="handleEditClick(this)">
+                Edit
+              </button>
+
+              <form action="/step3/delete/<%= course._id %>" method="POST" onsubmit="return confirm('Are you sure you want to delete this course?');">
+                <button type="submit" class="bg-white text-red-600 px-4 py-2 rounded-md border border-red-600 hover:bg-red-600 hover:text-white transition">Delete</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="editModal" class="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center hidden z-50">
+  <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
+    <h3 class="text-xl font-semibold mb-4 text-[#0F044C]">Edit Course</h3>
+    <form id="editCourseForm" method="POST" class="space-y-4">
+      <input type="text" name="courseName" id="editCourseName" placeholder="Course Name" required
+        class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0F044C]" />
+      
+      <input type="text" name="courseShortName" id="editCourseShortName" placeholder="Short Name" required
+        class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0F044C]" />
+      
+      <input type="number" name="studentStrength" id="editStudentStrength" placeholder="Student Strength" min="0" required
+        class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0F044C]" />
+      
+      <label class="block font-medium text-[#0F044C]">Select Subjects</label>
+      <div id="editSubjectsList" class="max-h-48 overflow-y-auto border border-gray-300 rounded p-2 bg-white">
+        <% subjects.forEach(subject => { %>
+          <div>
+            <input type="checkbox" id="editSubject-<%= subject._id %>" name="subjects" value="<%= subject._id %>" />
+            <label for="editSubject-<%= subject._id %>"><%= subject.fullName %> (<%= subject.shortName %>)</label>
+          </div>
+        <% }) %>
+      </div>
+      
+      <div class="flex justify-end space-x-4 pt-4">
+        <button
+          type="button"
+          class="bg-gray-300 text-[#0F044C] px-4 py-2 rounded-md hover:bg-gray-400 transition"
+          onclick="closeModal()"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          class="bg-[#141E61] text-white px-6 py-2 rounded-md hover:bg-[#787A91] transition"
+        >
+          Update
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  // Toggle subjects list on input click
+  function toggleSubjectList() {
+    const list = document.getElementById('subjectOptions');
+    list.classList.toggle('hidden');
+  }
+
+  // Toggle courses table on "View Courses" button click
+  const viewCoursesBtn = document.getElementById('viewCoursesBtn');
+  const coursesTableContainer = document.getElementById('coursesTableContainer');
+
+  viewCoursesBtn.addEventListener('click', () => {
+    const isVisible = !coursesTableContainer.classList.contains('hidden');
+    if (isVisible) {
+      // Hide table
+      coursesTableContainer.classList.add('hidden');
+      viewCoursesBtn.textContent = 'View Courses';
+    } else {
+      // Show table
+      coursesTableContainer.classList.remove('hidden');
+      viewCoursesBtn.textContent = 'Hide Courses';
+      // Scroll smoothly to the table
+      coursesTableContainer.scrollIntoView({ behavior: 'smooth' });
+    }
+  });
+
+  // Modal & Edit form handling
+  const editModal = document.getElementById('editModal');
+  const editCourseForm = document.getElementById('editCourseForm');
+
+  // Fill edit modal fields and show modal
+  function handleEditClick(button) {
+    const courseId = button.getAttribute('data-id');
+    const courseName = button.getAttribute('data-name');
+    const courseShortName = button.getAttribute('data-short');
+    const studentStrength = button.getAttribute('data-strength');
+    const subjectIds = JSON.parse(button.getAttribute('data-subjects'));
+
+    document.getElementById('editCourseName').value = courseName;
+    document.getElementById('editCourseShortName').value = courseShortName;
+    document.getElementById('editStudentStrength').value = studentStrength;
+
+    // Uncheck all subjects first
+    const allCheckboxes = editModal.querySelectorAll('input[type="checkbox"][name="subjects"]');
+    allCheckboxes.forEach(cb => cb.checked = false);
+
+    // Check relevant subjects
+    subjectIds.forEach(id => {
+      const checkbox = document.getElementById('editSubject-' + id);
+      if (checkbox) checkbox.checked = true;
+    });
+
+    // Update form action URL dynamically
+    editCourseForm.action = `/step3/edit/${courseId}`;
+
+    // Show modal
+    editModal.classList.remove('hidden');
+  }
+
+  // Close modal function
+  function closeModal() {
+    editModal.classList.add('hidden');
+  }
+
+  // Close modal when clicking outside modal content
+  editModal.addEventListener('click', (e) => {
+    if (e.target === editModal) {
+      closeModal();
+    }
+  });
+</script>
+
+</html>
+
+<%- include('../partials/footer') %>
