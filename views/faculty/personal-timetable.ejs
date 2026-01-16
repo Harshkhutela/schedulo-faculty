@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Personal Timetable</title>
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+body{background:#eee}
+.available-slot{
+  background:#d5f4e6 !important;
+  border:2px dashed #27ae60;
+  cursor:pointer;
+}
+.schedule-btn{
+  background:#3498db;
+  color:white;
+  font-size:12px;
+  padding:3px 8px;
+  border-radius:6px;
+  margin-top:6px;
+}
+.schedule-btn:hover{background:#1f6fb2}
+.scheduled-badge{
+  background:#27ae60;
+  color:white;
+  font-size:11px;
+  padding:2px 6px;
+  border-radius:12px;
+  display:inline-block;
+  margin-top:4px;
+}
+</style>
+</head>
+
+<body>
+
+<header class="bg-[#0F044C] text-white p-4">
+  Faculty: <%= teacherName %>
+</header>
+
+<div class="p-8">
+
+<table border="1" class="w-full text-center bg-white">
+<thead class="bg-[#141E61] text-white">
+<tr>
+<th>Day</th>
+<% slots.forEach(s=>{ %><th><%= s %></th><% }) %>
+</tr>
+</thead>
+
+<tbody>
+
+<%
+days.forEach(day=>{
+%>
+<tr>
+<th class="bg-gray-100"><%= day %></th>
+
+<%
+for(let i=0;i<slots.length;i++){
+  let cls=null, course=null;
+  for(let c in personalTimetable){
+    if(personalTimetable[c][day]?.[i]){
+      cls=personalTimetable[c][day][i];
+      course=c;
+      break;
+    }
+  }
+
+  if(!cls){
+%>
+<td>-</td>
+<%
+  }else{
+%>
+<td data-course="<%= course %>"
+    data-day="<%= day %>"
+    data-slot="<%= i %>"
+    style="background:<%= cls.isLab?'#CBDCEB':'#d4e6f1' %>">
+
+<b><%= course %></b><br>
+<%= cls.subject %><br>
+🏛 <%= cls.room %>
+
+<% if(cls.scheduled){ %>
+<div class="scheduled-badge">🕒 Scheduled</div>
+<% }else{ %>
+<button class="schedule-btn"
+ onclick="startSchedule('<%= course %>','<%= day %>',<%= i %>)">
+🕒 Schedule
+</button>
+<% } %>
+
+</td>
+<%
+  }
+}
+%>
+
+</tr>
+<% }) %>
+
+</tbody>
+</table>
+
+</div>
+
+<!-- DATE MODAL -->
+<div id="dateModal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center">
+<div class="bg-white p-6 rounded w-80">
+<h3 class="font-bold mb-3">Select Date</h3>
+<input type="date" id="scheduleDate" class="border p-2 w-full">
+<button onclick="loadRooms()" class="mt-4 bg-green-600 text-white px-4 py-2 rounded w-full">
+Next
+</button>
+</div>
+</div>
+
+<!-- ROOM MODAL -->
+<div id="roomModal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center">
+<div class="bg-white p-6 rounded w-80">
+<h3 class="font-bold mb-3">Select Room</h3>
+<div id="roomList"></div>
+</div>
+</div>
+
+<script>
+const personalTimetable = <%- JSON.stringify(personalTimetable) %>;
+const courseTimetables = <%- JSON.stringify(courseTimetables) %>;
+
+let active={};
+
+function startSchedule(course, day, slot) {
+  active = { course, day, slot };
+  highlightCourseLibrarySlots(course);
+}
+
+
+function highlightCourseLibrarySlots(course) {
+
+  // clear old highlights
+  document.querySelectorAll('.available-slot').forEach(td => {
+    td.classList.remove('available-slot');
+    td.onclick = null;
+  });
+
+  const courseTT = courseTimetables[course];
+
+  if (!courseTT) {
+    alert('❌ Course timetable not found');
+    return;
+  }
+
+  let found = false;
+
+  Object.keys(courseTT).forEach(dayName => {
+    const daySlots = courseTT[dayName];
+
+    Object.keys(daySlots).forEach(slotStr => {
+      const slotIndex = Number(slotStr);
+      const entry = daySlots[slotStr];
+
+      if (
+        entry.subject &&
+        entry.subject.toLowerCase().includes('library')
+      ) {
+        const row = [...document.querySelectorAll('tbody tr')]
+          .find(r => r.querySelector('th')?.innerText.trim() === dayName);
+
+        if (!row) return;
+
+        let currentSlot = 0;
+
+        row.querySelectorAll('td').forEach(td => {
+          const colspan = parseInt(td.getAttribute('colspan') || 1);
+
+          if (currentSlot === slotIndex) {
+            found = true;
+            td.classList.add('available-slot');
+
+            td.onclick = () => {
+              active.targetDay = dayName;
+              active.targetSlot = slotIndex;
+              document.getElementById('dateModal').classList.remove('hidden');
+            };
+          }
+
+          currentSlot += colspan;
+        });
+      }
+    });
+  });
+
+  if (!found) {
+    alert('❌ No Library slots available in this course timetable');
+  }
+}
+
+
+function loadRooms(){
+  const date=document.getElementById('scheduleDate').value;
+  fetch(`/schedule/api/free-rooms?day=${active.targetDay}&slot=${active.targetSlot}&date=${date}`)
+  .then(r=>r.json())
+  .then(d=>{
+    if(!d.success) return alert('No rooms available');
+    roomList.innerHTML=d.freeRooms.map(r=>
+      `<button class="block w-full border p-2 mt-2"
+       onclick="finalSchedule('${r}','${date}')">${r}</button>`
+    ).join('');
+    dateModal.classList.add('hidden');
+    roomModal.classList.remove('hidden');
+  });
+}
+
+function finalSchedule(room,date){
+  fetch('/schedule/api/temporary-schedule',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      teacherId:'<%= teacherId %>',
+      course:active.course,
+      subject:'',
+      from:{day:active.day,slot:active.slot},
+      to:{day:active.targetDay,slot:active.targetSlot,date},
+      room
+    })
+  }).then(()=>location.reload());
+}
+</script>
+
+</body>
+</html>

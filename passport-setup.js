@@ -4,6 +4,7 @@ dotenv.config();
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const User = require('./models/User');
+const Teacher = require('./models/Teacher');
 
 passport.use(new GoogleStrategy(
   {
@@ -21,20 +22,43 @@ passport.use(new GoogleStrategy(
         : [];
 
       const isAdmin = adminEmails.includes(email.toLowerCase());
+      
+      // ✅ Check if faculty email (@svsu.ac.in)
+      const isFacultyEmail = /@svsu\.ac\.in$/i.test(email);
 
       // 🔓 Allow ANY email as user
       let user = await User.findOne({ googleId: profile.id });
 
       if (!user) {
-        user = await User.create({
+        const userData = {
           googleId: profile.id,
           displayName: profile.displayName || "No Name",
           email: email,
           isAdmin: isAdmin,
-        });
+          isFaculty: isFacultyEmail,
+          teacherId: null
+        };
+
+        // If faculty email, try to find matching teacher
+        if (isFacultyEmail) {
+          const teacher = await Teacher.findOne({ email: email });
+          if (teacher) {
+            userData.teacherId = teacher._id;
+          }
+        }
+
+        user = await User.create(userData);
       } else {
-        // Update isAdmin flag if email is in admin list
+        // Update flags
         user.isAdmin = isAdmin;
+        user.isFaculty = isFacultyEmail;
+        
+        // Update teacherId if faculty
+        if (isFacultyEmail) {
+          const teacher = await Teacher.findOne({ email: email });
+          user.teacherId = teacher ? teacher._id : null;
+        }
+        
         await user.save();
       }
 

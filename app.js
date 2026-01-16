@@ -14,6 +14,7 @@ require('./passport-setup');
 const checkAdmin = require('./middleware/checkAdmin');
 const userRoutes = require('./routes/user');
 const authRoutes = require('./routes/auth');
+const facultyRoutes = require('./routes/faculty');
 
 const step1Routes = require('./routes/step1');
 const step2Routes = require('./routes/step2');
@@ -28,7 +29,12 @@ app.use(express.urlencoded({ extended: true }));
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
-  saveUninitialized: false
+  saveUninitialized: false,
+  cookie: {
+    secure: false, // Set to true in production with HTTPS
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
 }));
 
 // Initialize Passport
@@ -70,6 +76,12 @@ app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
 app.use('/', userRoutes); 
 
+// Faculty routes (only for logged in faculty users)
+app.use('/faculty', isLoggedIn, facultyRoutes);
+
+const scheduleRoutes = require('./routes/schedule');
+app.use('/schedule', scheduleRoutes);
+
 // Protected Step routes (only logged in & admin users)
 app.use('/step1', isLoggedIn, checkAdmin, step1Routes);
 app.use('/step2', isLoggedIn, checkAdmin, step2Routes);
@@ -86,6 +98,10 @@ app.get('/', (req, res) => {
 
   if (req.user && req.user.isAdmin) {
     return res.redirect('/step1'); // admin
+  }
+
+  if (req.user && req.user.isFaculty) {
+    return res.redirect('/faculty'); // faculty
   }
 
   return res.redirect('/user/timetable'); // normal user

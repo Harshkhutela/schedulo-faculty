@@ -32,6 +32,12 @@ const teacherSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  email: {
+    type: String,
+    default: null,
+    sparse: true,
+    unique: true
+  },
   workingHoursPerWeek: {
     type: Number,
     required: true

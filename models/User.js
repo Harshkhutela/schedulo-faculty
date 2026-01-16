@@ -16,6 +16,15 @@ const userSchema = new mongoose.Schema({
   isAdmin: {
     type: Boolean,
     default: false
+  },
+  isFaculty: {
+    type: Boolean,
+    default: false
+  },
+  teacherId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Teacher',
+    default: null
   }
 });
 

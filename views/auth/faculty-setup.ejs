@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Faculty Setup - Select Your Profile</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+    }
+    .setup-container {
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      padding: 40px;
+      max-width: 800px;
+      width: 100%;
+    }
+    .teacher-card {
+      border: 2px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 15px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: #f9fafb;
+    }
+    .teacher-card:hover {
+      border-color: #667eea;
+      background: #f0f4ff;
+      transform: translateX(5px);
+    }
+    .teacher-card.selected {
+      border-color: #667eea;
+      background: #e8ecff;
+      box-shadow: 0 0 15px rgba(102, 126, 234, 0.2);
+    }
+    .teacher-card input[type="radio"] {
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="setup-container">
+    <div class="text-center mb-8">
+      <h1 class="text-3xl font-bold text-[#0F044C] mb-2">🎓 Faculty Setup</h1>
+      <p class="text-gray-600">Welcome! Please select your profile to continue</p>
+      <p class="text-sm text-gray-500 mt-2">Email: <strong><%= userEmail %></strong></p>
+    </div>
+
+    <div id="loadingSpinner" class="flex justify-center items-center space-x-2 mb-6 hidden">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-[#667eea]"></div>
+      <span class="text-gray-600">Loading teachers...</span>
+    </div>
+
+    <form id="setupForm" class="space-y-4" style="display: none;">
+      <input type="hidden" id="selectedTeacherId" name="teacherId" />
+      
+      <div id="teachersContainer" class="max-h-96 overflow-y-auto">
+        <!-- Teachers will be loaded here -->
+      </div>
+
+      <div class="mt-8 space-y-3">
+        <button type="submit" id="confirmBtn" disabled class="w-full bg-[#667eea] hover:bg-[#5a67d8] disabled:bg-gray-300 text-white font-bold py-3 px-4 rounded-lg transition">
+          ✅ Confirm & Continue
+        </button>
+        <a href="/auth/logout" class="block w-full text-center bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-4 rounded-lg transition">
+          🔙 Logout
+        </a>
+      </div>
+
+      <div class="mt-6 p-4 bg-blue-50 border-l-4 border-blue-500 rounded">
+        <p class="text-sm text-gray-700">
+          <strong>ℹ️ Info:</strong> Select your name from the list below. If your name is not in the list, 
+          please contact the administration. Your email (<strong><%= userEmail %></strong>) will be linked to your profile.
+        </p>
+      </div>
+    </form>
+
+    <div id="noTeachersMessage" class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded hidden">
+      <p class="text-yellow-800 mb-4">
+        No unassigned teachers found in the system. Please contact the administration to add you as a teacher first.
+      </p>
+      <a href="/auth/logout" class="inline-block bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition">
+        Logout
+      </a>
+    </div>
+  </div>
+
+  <script>
+    const setupForm = document.getElementById('setupForm');
+    const teachersContainer = document.getElementById('teachersContainer');
+    const selectedTeacherInput = document.getElementById('selectedTeacherId');
+    const confirmBtn = document.getElementById('confirmBtn');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const noTeachersMessage = document.getElementById('noTeachersMessage');
+    let teachers = [];
+
+    // Load teachers on page load
+    document.addEventListener('DOMContentLoaded', async () => {
+      loadingSpinner.classList.remove('hidden');
+      
+      try {
+        const response = await fetch('/auth/api/unassigned-teachers');
+        const data = await response.json();
+        teachers = data;
+
+        if (teachers.length === 0) {
+          loadingSpinner.classList.add('hidden');
+          noTeachersMessage.classList.remove('hidden');
+          return;
+        }
+
+        loadingSpinner.classList.add('hidden');
+        setupForm.style.display = 'block';
+        renderTeachers();
+      } catch (error) {
+        console.error('Error loading teachers:', error);
+        loadingSpinner.innerHTML = '<p class="text-red-600">Error loading teachers. Please refresh the page.</p>';
+      }
+    });
+
+    function renderTeachers() {
+      teachersContainer.innerHTML = '';
+      
+      teachers.forEach((teacher, index) => {
+        const card = document.createElement('label');
+        card.className = 'teacher-card';
+        card.innerHTML = `
+          <div class="flex items-start space-x-4">
+            <input type="radio" name="teacher" value="${teacher._id}" class="mt-1 teacher-radio" />
+            <div class="flex-grow">
+              <h3 class="font-bold text-lg text-[#0F044C]">${teacher.name}</h3>
+              <p class="text-sm text-gray-600">Short Name: <strong>${teacher.shortName}</strong></p>
+              <p class="text-sm text-gray-600">Working Hours/Week: <strong>${teacher.workingHoursPerWeek}</strong></p>
+            </div>
+          </div>
+        `;
+
+        const radio = card.querySelector('input[type="radio"]');
+        radio.addEventListener('change', (e) => {
+          // Remove selected class from all cards
+          document.querySelectorAll('.teacher-card').forEach(c => c.classList.remove('selected'));
+          // Add selected class to clicked card
+          card.classList.add('selected');
+          selectedTeacherInput.value = e.target.value;
+          confirmBtn.disabled = false;
+        });
+
+        teachersContainer.appendChild(card);
+      });
+    }
+
+    setupForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      if (!selectedTeacherInput.value) {
+        alert('Please select a teacher profile');
+        return;
+      }
+
+      confirmBtn.disabled = true;
+      confirmBtn.innerHTML = '⏳ Processing...';
+
+      try {
+        const response = await fetch('/auth/api/assign-teacher', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            teacherId: selectedTeacherInput.value
+          })
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          // Redirect to faculty dashboard
+          window.location.href = '/faculty';
+        } else {
+          alert('Error: ' + (result.error || 'Failed to assign teacher'));
+          confirmBtn.disabled = false;
+          confirmBtn.innerHTML = '✅ Confirm & Continue';
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = '✅ Confirm & Continue';
+      }
+    });
+  </script>
+
+</body>
+</html>

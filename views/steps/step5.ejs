@@ -54,11 +54,18 @@
       </div>
     </div>
 
-    <!-- Working Hours -->
-    <div>
-      <label class="block text-[#0F044C] font-medium mb-1">Working Hours per Week</label>
-      <input type="number" name="workingHoursPerWeek" required placeholder="e.g. 12"
-             class="w-full border border-gray-400 rounded-md px-4 py-2 focus:ring-[#0F044C] focus:ring-2" />
+    <!-- Working Hours and Email -->
+    <div class="grid grid-cols-2 gap-6">
+      <div>
+        <label class="block text-[#0F044C] font-medium mb-1">Working Hours per Week</label>
+        <input type="number" name="workingHoursPerWeek" required placeholder="e.g. 12"
+               class="w-full border border-gray-400 rounded-md px-4 py-2 focus:ring-[#0F044C] focus:ring-2" />
+      </div>
+      <div>
+        <label class="block text-[#0F044C] font-medium mb-1">Email (Optional)</label>
+        <input type="email" name="email" placeholder="teacher@svsu.ac.in"
+               class="w-full border border-gray-400 rounded-md px-4 py-2 focus:ring-[#0F044C] focus:ring-2" />
+      </div>
     </div>
 
     <!-- Time Off Feature -->
@@ -170,9 +177,14 @@
     <tbody>
       <% teachers.forEach(teacher => { %>
         <tr>
-          <td style="padding: 6px 8px; white-space: nowrap;">
+          <td style="padding: 6px 8px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span><%= teacher.name %> (<%= teacher.shortName %>)</span>
+              <div>
+                <span><%= teacher.name %> (<%= teacher.shortName %>)</span>
+                <% if (teacher.email) { %>
+                  <span style="display: inline-block; margin-left: 10px; background-color: #10b981; color: white; padding: 2px 8px; border-radius: 3px; font-size: 12px;">✓ <%= teacher.email %></span>
+                <% } %>
+              </div>
               <button onclick="toggleDetails('<%= teacher._id %>')" 
                 style="padding: 4px 10px; background-color: #787A91; color: white; border: none; cursor: pointer; border-radius: 3px; font-size: 15px;">
                 View
@@ -186,12 +198,16 @@
   <td colspan="2" style="padding: 10px; display: flex; flex-direction: column; gap: 10px;">
 
     <p><strong>Working Hours:</strong> <%= teacher.workingHoursPerWeek %> hrs/week</p>
+    <% if (teacher.email) { %>
+      <p><strong>Email:</strong> <span style="background-color: #10b981; color: white; padding: 2px 6px; border-radius: 3px;"><%= teacher.email %></span></p>
+    <% } %>
 
     <!-- Edit Teacher Info -->
     <form action="/step5/edit/<%= teacher._id %>" method="POST" style="margin-bottom: 10px; font-size: 15px;">
       <input type="text" name="name" value="<%= teacher.name %>" required style="padding: 4px; margin-right: 5px; width: 30%;" />
       <input type="text" name="shortName" value="<%= teacher.shortName %>" required style="padding: 4px; margin-right: 5px; width: 15%;" />
       <input type="number" name="workingHoursPerWeek" value="<%= teacher.workingHoursPerWeek %>" required style="padding: 4px; width: 15%;" />
+      <input type="email" name="email" value="<%= teacher.email || '' %>" placeholder="teacher@svsu.ac.in" style="padding: 4px; margin-right: 5px; width: 25%;" />
 
       <h4 name="timeOffDay[]" style="margin-top: 10px; margin-bottom: 6px; font-size: 16px;"><strong>Teacher Time Off:</strong></h4>
       <div>

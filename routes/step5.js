@@ -22,7 +22,7 @@ router.get('/', async (req, res) => {
 // POST: Add a new teacher with time off
 router.post('/add', async (req, res) => {
   try {
-    const { name, shortName, workingHoursPerWeek, timeOffDay, timeOffStart, timeOffEnd } = req.body;
+    const { name, shortName, workingHoursPerWeek, timeOffDay, timeOffStart, timeOffEnd, email } = req.body;
     const timeOff = timeOffDay.map((day, idx) => ({
       day,
       start: timeOffStart[idx],
@@ -34,6 +34,7 @@ router.post('/add', async (req, res) => {
       shortName,
       workingHoursPerWeek,
       timeOff,
+      email: email || null,
       assignments: []
     });
     res.redirect('/step5');
@@ -46,7 +47,7 @@ router.post('/add', async (req, res) => {
 // POST: Edit teacher info
 router.post('/edit/:id', async (req, res) => {
   try {
-    const { name, shortName, workingHoursPerWeek, timeOffDay, timeOffStart, timeOffEnd } = req.body;
+    const { name, shortName, workingHoursPerWeek, timeOffDay, timeOffStart, timeOffEnd, email } = req.body;
 
     // Ensure arrays for consistent mapping
     const days = Array.isArray(timeOffDay) ? timeOffDay : [timeOffDay];
@@ -63,7 +64,8 @@ router.post('/edit/:id', async (req, res) => {
       name,
       shortName,
       workingHoursPerWeek,
-      timeOff
+      timeOff,
+      email: email || null
     });
 
     res.redirect('/step5');
@@ -191,6 +193,41 @@ router.post('/delete/:id', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).send("Error deleting teacher");
+  }
+});
+
+// POST: Assign email to teacher (for faculty first login)
+router.post('/assign-email/:id', async (req, res) => {
+  try {
+    const { email } = req.body;
+    const emailRegex = /@svsu\.ac\.in$/i;
+    
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Only @svsu.ac.in emails allowed' });
+    }
+
+    // Check if email already assigned
+    const existingTeacher = await Teacher.findOne({ email: email });
+    if (existingTeacher) {
+      return res.status(400).json({ error: 'This email is already assigned to another teacher' });
+    }
+
+    await Teacher.findByIdAndUpdate(req.params.id, { email });
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error assigning email' });
+  }
+});
+
+// GET: Teachers without assigned emails
+router.get('/unassigned-emails', async (req, res) => {
+  try {
+    const teachersWithoutEmail = await Teacher.find({ email: null });
+    res.json(teachersWithoutEmail);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error fetching teachers' });
   }
 });
 
