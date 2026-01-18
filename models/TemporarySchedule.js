@@ -1,24 +1,32 @@
 const mongoose = require('mongoose');
 
 const TemporaryScheduleSchema = new mongoose.Schema({
-  teacherId: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher', required: true },
-  course: String,
-  subject: String,
+  course: { type: String, required: true },
+  subject: { type: String, required: true },
 
-  original: {
+  teacherId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Teacher',
+    required: true
+  },
+
+  from: {
     day: String,
     slot: Number
   },
 
-  shiftedTo: {
+  to: {
     day: String,
     slot: Number,
     date: Date
   },
 
-  room: String,
+  room: { type: String, required: true },
 
-  expiresAt: Date
-}, { timestamps: true });
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
 
 module.exports = mongoose.model('TemporarySchedule', TemporaryScheduleSchema);
