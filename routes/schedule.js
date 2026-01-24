@@ -125,12 +125,12 @@ router.post('/api/save-temporary-schedule', async (req, res) => {
     const endOfDay = new Date(dateObj);
     endOfDay.setHours(23, 59, 59, 999);
 
-    // ❌ CHECK: SLOT ALREADY USED BY ANOTHER TEACHER?
+    // ❌ CHECK: SLOT ALREADY USED BY ANY TEACHER (FROZEN)?
+    // This prevents ANY teacher from booking a slot that's already been rescheduled to
     const slotClash = await TemporarySchedule.findOne({
       'to.day': data.to.day,
       'to.slot': slot,
       'to.date': { $gte: startOfDay, $lte: endOfDay },
-      teacherId: { $ne: data.teacherId },
       status: 'scheduled'
     });
 
@@ -268,6 +268,165 @@ router.get('/api/today-schedules', async (req, res) => {
   } catch (err) {
     console.error('Error fetching today schedules:', err);
     res.status(500).json({ schedules: [] });
+  }
+});
+
+/**
+ * 🔹 UNDO RESCHEDULE - Delete temporary schedule and related notification
+ * - Removes the temporary schedule
+ * - Deletes the notification
+ * - Class goes back to original slot
+ */
+router.delete('/api/undo-schedule/:scheduleId', async (req, res) => {
+  try {
+    const { scheduleId } = req.params;
+
+    console.log('🔄 Undoing schedule:', scheduleId);
+
+    // Find the schedule to get details for notification deletion
+    const schedule = await TemporarySchedule.findById(scheduleId);
+    if (!schedule) {
+      return res.status(404).json({ error: 'Schedule not found' });
+    }
+
+    // Delete the temporary schedule
+    await TemporarySchedule.findByIdAndDelete(scheduleId);
+    console.log('✅ Temporary schedule deleted');
+
+    // Delete related notification
+    await ScheduleNotification.deleteOne({
+      teacherId: schedule.teacherId,
+      course: schedule.course,
+      'toSlot.date': schedule.to.date
+    });
+    console.log('✅ Notification deleted');
+
+    res.json({ 
+      success: true, 
+      message: 'Schedule undone! Class moved back to original slot.'
+    });
+
+  } catch (err) {
+    console.error('❌ Error undoing schedule:', err.message);
+    res.status(500).json({ error: 'Failed to undo schedule: ' + err.message });
+  }
+});
+
+/**
+ * 🔹 RESCHEDULE - Update existing schedule to new slot/date/room
+ * - Updates the temporary schedule with new details
+ * - Updates notification
+ */
+router.post('/api/reschedule/:scheduleId', async (req, res) => {
+  try {
+    const { scheduleId } = req.params;
+    const data = req.body;
+
+    console.log('📝 Rescheduling:', scheduleId, JSON.stringify(data, null, 2));
+
+    // Find old schedule
+    const oldSchedule = await TemporarySchedule.findById(scheduleId);
+    if (!oldSchedule) {
+      return res.status(404).json({ error: 'Schedule not found' });
+    }
+
+    // Validate new data
+    if (!data.to || !data.room || !data.building) {
+      return res.status(400).json({ error: 'Missing required fields for reschedule' });
+    }
+
+    const slot = Number(data.to.slot);
+    const dateObj = new Date(data.to.date);
+    const startOfDay = new Date(dateObj);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(dateObj);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // ❌ CHECK: NEW SLOT ALREADY USED BY ANY TEACHER (FROZEN)?
+    const slotClash = await TemporarySchedule.findOne({
+      _id: { $ne: scheduleId }, // Exclude current schedule
+      'to.day': data.to.day,
+      'to.slot': slot,
+      'to.date': { $gte: startOfDay, $lte: endOfDay },
+      status: 'scheduled'
+    });
+
+    if (slotClash) {
+      const Teacher = require('../models/Teacher');
+      const teacher = await Teacher.findById(slotClash.teacherId);
+      return res.status(409).json({
+        error: `❌ This slot is already scheduled by ${teacher?.name || 'another teacher'}.`
+      });
+    }
+
+    // ❌ CHECK: NEW ROOM ALREADY USED?
+    const roomClash = await TemporarySchedule.findOne({
+      _id: { $ne: scheduleId },
+      room: data.room,
+      'to.day': data.to.day,
+      'to.slot': slot,
+      'to.date': { $gte: startOfDay, $lte: endOfDay },
+      status: 'scheduled'
+    });
+
+    if (roomClash) {
+      return res.status(409).json({
+        error: `❌ This room is already booked on ${data.to.date} at this slot`
+      });
+    }
+
+    // Get week start date
+    const weekStart = getWeekStartDate(dateObj);
+
+    // ✅ UPDATE TEMPORARY SCHEDULE
+    const updatedSchedule = await TemporarySchedule.findByIdAndUpdate(
+      scheduleId,
+      {
+        to: {
+          day: data.to.day,
+          slot,
+          date: dateObj
+        },
+        room: data.room,
+        building: data.building,
+        weekStartDate: weekStart,
+        status: 'scheduled'
+      },
+      { new: true }
+    );
+
+    console.log('✅ Schedule updated:', updatedSchedule._id);
+
+    // ✅ UPDATE NOTIFICATION
+    await ScheduleNotification.updateOne(
+      {
+        teacherId: oldSchedule.teacherId,
+        course: oldSchedule.course,
+        'toSlot.date': oldSchedule.to.date
+      },
+      {
+        toSlot: {
+          day: data.to.day,
+          slot,
+          date: dateObj
+        },
+        room: data.room,
+        building: data.building,
+        scheduledDate: dateObj
+      }
+    );
+
+    console.log('✅ Notification updated');
+
+    res.json({ 
+      success: true, 
+      message: 'Class rescheduled successfully!',
+      schedule: updatedSchedule 
+    });
+
+  } catch (err) {
+    console.error('❌ Error rescheduling:', err.message);
+    res.status(500).json({ error: 'Failed to reschedule: ' + err.message });
   }
 });
 

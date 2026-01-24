@@ -30,7 +30,7 @@ const TemporaryScheduleSchema = new mongoose.Schema({
   weekStartDate: { 
     type: Date,
     required: true
-  },
+   },
 
   // Status
   status: {

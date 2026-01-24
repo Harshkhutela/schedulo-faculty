@@ -225,10 +225,13 @@ for(let i=0;i<slots.length;i++){
                 <strong>Room:</strong> 🏛️ <%= sch.room %> (<%= sch.building %>)
               </p>
             </div>
-            <div class="text-right">
+            <div class="text-right flex flex-col gap-2">
               <span class="inline-block bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold">🕒 Scheduled</span>
-              <button onclick="rescheduleClass('<%= sch.id %>')" class="block mt-2 bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">
+              <button onclick="rescheduleClass('<%= sch.id %>')" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">
                 ✏️ Reschedule
+              </button>
+              <button onclick="undoSchedule('<%= sch.id %>')" class="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700">
+                ↩️ Undo
               </button>
             </div>
           </div>
@@ -276,8 +279,56 @@ function startSchedule(course, day, slot, isLab) {
 }
 
 function rescheduleClass(scheduleId) {
-  // TODO: Implement reschedule functionality
-  alert('Reschedule functionality coming soon! ID: ' + scheduleId);
+  // Get the schedule details from scheduledClasses
+  let schedule = null;
+  for(let key in scheduledClasses) {
+    if(scheduledClasses[key].id === scheduleId) {
+      schedule = scheduledClasses[key];
+      break;
+    }
+  }
+
+  if(!schedule) {
+    alert('❌ Schedule not found');
+    return;
+  }
+
+  // Set active for scheduling
+  active = {
+    course: schedule.course,
+    day: schedule.originalSlot.day,
+    slot: schedule.originalSlot.slot,
+    subject: schedule.subject || '',
+    isLab: schedule.isLab,
+    rescheduleId: scheduleId // Track that we're rescheduling
+  };
+
+  // Start the scheduling process - highlight library slots
+  highlightCourseLibrarySlots(schedule.course);
+}
+
+function undoSchedule(scheduleId) {
+  if(!confirm('❓ Are you sure? This will move the class back to its original slot.')) {
+    return;
+  }
+
+  fetch(`/schedule/api/undo-schedule/${scheduleId}`, {
+    method: 'DELETE',
+    headers: {'Content-Type': 'application/json'}
+  })
+  .then(r => r.json())
+  .then(d => {
+    if(d.success) {
+      alert('✅ ' + d.message);
+      location.reload();
+    } else {
+      alert('❌ Error: ' + (d.error || 'Failed to undo'));
+    }
+  })
+  .catch(err => {
+    console.error('❌ Fetch error:', err);
+    alert('❌ Network error: ' + err.message);
+  });
 }
 
 function showScheduleDetails(scheduleId) {
@@ -451,7 +502,13 @@ function loadRooms(date){
 }
 
 function finalSchedule(room, building, date){
-  console.log('📌 Scheduling class:', {
+  // Check if this is a reschedule operation
+  const isReschedule = !!active.rescheduleId;
+  const endpoint = isReschedule 
+    ? `/schedule/api/reschedule/${active.rescheduleId}`
+    : '/schedule/api/save-temporary-schedule';
+
+  console.log('📝 ' + (isReschedule ? 'Rescheduling' : 'Scheduling') + ' class:', {
     course: active.course,
     from: {day: active.day, slot: active.slot},
     to: {day: active.targetDay, slot: active.targetSlot, date},
@@ -459,18 +516,26 @@ function finalSchedule(room, building, date){
     building
   });
 
-  fetch('/schedule/api/save-temporary-schedule',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      teacherId:'<%= teacherId %>',
-      course:active.course,
-      subject:active.subject || '',
-      from:{day:active.day,slot:active.slot},
-      to:{day:active.targetDay,slot:active.targetSlot,date},
-      room,
-      building
-    })
+  const payload = isReschedule
+    ? {
+        to: {day: active.targetDay, slot: active.targetSlot, date},
+        room,
+        building
+      }
+    : {
+        teacherId: '<%= teacherId %>',
+        course: active.course,
+        subject: active.subject || '',
+        from: {day: active.day, slot: active.slot},
+        to: {day: active.targetDay, slot: active.targetSlot, date},
+        room,
+        building
+      };
+
+  fetch(endpoint, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload)
   })
   .then(r => {
     console.log('Response status:', r.status);
@@ -479,10 +544,10 @@ function finalSchedule(room, building, date){
   .then(d => {
     console.log('Response data:', d);
     if(d.success) {
-      alert('✅ ' + (d.message || 'Class scheduled successfully!'));
+      alert('✅ ' + (d.message || (isReschedule ? 'Class rescheduled successfully!' : 'Class scheduled successfully!')));
       location.reload();
     } else {
-      alert('❌ Error: ' + (d.error || 'Failed to schedule'));
+      alert('❌ Error: ' + (d.error || 'Failed to ' + (isReschedule ? 'reschedule' : 'schedule')));
       console.error('Server error:', d.error);
     }
   })
